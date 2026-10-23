@@ -3,7 +3,7 @@ import requests, os
 
 app = Flask(__name__)
 
-PHONE_NUMBER_ID = "1391576127373338"
+PHONE_NUMBER_ID = "1389543247565401"
 VERIFY_TOKEN = "josperfume123"
 OWNER_NUMBER = "2348084831989"
 
@@ -17,14 +17,14 @@ SHOP = {
     "bank": "Opay"
 }
 
-@app.route('/webhook', methods=['GET'])
-def verify():
-    if request.args.get("hub.verify_token") == VERIFY_TOKEN:
-        return request.args.get("hub.challenge")
-    return "Forbidden", 403
-
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
+    if request.method == 'GET':
+        if request.args.get("hub.verify_token") == VERIFY_TOKEN:
+            return request.args.get("hub.challenge"), 200
+        return "Forbidden", 403
+
+    # POST - incoming messages
     data = request.get_json()
     try:
         value = data['entry'][0]['changes'][0]['value']
@@ -35,16 +35,16 @@ def webhook():
         name = value.get('contacts', [{}])[0].get('profile', {}).get('name', 'there')
         text = msg['text']['body'].lower()
         original = msg['text']['body']
-        
+
         if any(w in text for w in ["hi", "hello", "hey"]):
             reply = f"Hello {name} 😊 Welcome to Jos Perfume! How can I help?"
         elif any(w in text for w in ["account", "pay", "bank"]):
-            reply = f"Bank: {SHOP['bank']}\nName: {SHOP['account_name']}\nNumber: {SHOP['account_number']}\n\nSend screenshot after payment 🙏"
+            reply = f"Bank: {SHOP['bank']}\nName: {SHOP['account_name']}\nNumber: {SHOP['account_number']}\n\nSend screenshot after payment"
         elif any(w in text for w in ["order", "buy", "want"]):
             reply = f"Got it {name}! Order '{original}' received. Forwarded to Oga ✅"
         else:
             reply = f"Hello {name}, ask me about products, price, location, account number, or place order."
-        
+
         send_message(from_number, reply)
     except Exception as e:
         print(e)
